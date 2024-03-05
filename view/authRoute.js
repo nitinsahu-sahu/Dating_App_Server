@@ -3,7 +3,7 @@ const { register, signin, userById, signout } = require('../controllers/authCont
 const router = express.Router();
 
 
-router.get('/users/:userId', userById)
+router.get('/users/:userId/:showme', userById)
 router.post('/signin', signin)
 router.post('/register', register)
 router.post('/signout', signout)

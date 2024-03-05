@@ -1,13 +1,18 @@
 const User = require('../models/Users')
 const bcrypt = require('bcryptjs');
+const Conversation = require('../models/Conversation')
 
 // ----------------Users by id
 
 exports.userById = async (req, res) => {
     try {
-        const userId = req.params.userId;
+        const { userId, showme } = req.params;
         const users = await User.find({ _id: { $ne: userId } });
-        const usersData = Promise.all(users.map(async (user) => {
+        const usersByShowme = users.filter((item) => item.gender === showme)
+        const conversations = await Conversation.find({ members: { $in: [userId] } });
+        let  conuser = usersByShowme.filter((item)=>console.log(item._id === conversations.members.map((mem)=>mem)))
+        console.log(conversations);
+        const usersData = Promise.all(usersByShowme.map(async (user) => {
             return {
                 _id: user._id,
                 email: user.email,
@@ -45,22 +50,50 @@ exports.register = (req, res) => {
 //Signin controller
 exports.signin = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) {
+        const { loginId, password } = req.body;
+        if (!loginId || !password) {
             return res.status(400).json({ errors: "Please fill the field properly" });
         }
-        const user_info = await User.findOne({ email: email });
+        const user_info = await User.findOne({
+            $or: [
+                { email: loginId },
+                { number: loginId }
+            ]
+        })
         if (user_info && user_info.role === 'guest') {
             const isMatch = await bcrypt.compare(password, user_info.pass_word);
             const token = await user_info.generateAuthToken();
             const user_id = user_info._id;
             res.cookie('user_token', token, { expiresIn: '5h' })
             res.cookie('user_id', user_id, { expiresIn: '5h' })
-            const { _id, fullname, email, gender, showme, intent, dob, number, profile } = user_info;
+            const {
+                _id,
+                fullname,
+                email,
+                gender,
+                showme,
+                intent,
+                dob,
+                number,
+                profile
+            } = user_info;
             if (!isMatch) {
                 res.status(400).json({ errors: "Invalid email and password." });
             } else {
-                res.status(200).json({ _id, token, data: { _id, fullname, email, gender, showme, intent, dob, number, profile }, message: "Signin successfully" });
+                res.status(200).json(
+                    {
+                        _id,
+                        token,
+                        data: {
+                            _id,
+                            fullname,
+                            email,
+                            gender,
+                            showme,
+                            intent,
+                            dob, number, profile
+                        }, message: "Signin successfully"
+                    });
             }
         } else {
             res.status(400).json({ errors: "User not found." });
