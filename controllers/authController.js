@@ -1,7 +1,36 @@
 const User = require('../models/Users')
 const bcrypt = require('bcryptjs');
-const Conversation = require('../models/Conversation')
 
+// if (req.file) {
+    //     profile = req.file.filename;
+    // }
+// ------------------ Edit Personal Details Apis------
+exports.updateInfo = (req, res) => {
+    const { fullname, dob, number, gender, showme, intent } = req.body;
+    if (req.file) {
+        profile = req.file.filename;
+    }
+    const update = {
+        $set: {
+            fullname,
+            dob,
+            number,
+            gender,
+            showme,
+            intent,
+            profile
+        }
+    }
+    User.findOneAndUpdate({ _id: req.params.userId}, update, {
+        new: true,
+        useFindAndModify: false
+    }).then((data) => {
+        res.status(200).json({updateData:data, message: "Update successfully." });
+    }).catch((error) =>
+        res.status(400).send({ errors: error.message })
+    );
+
+}
 // ----------------Users by id
 
 exports.userById = async (req, res) => {
@@ -9,9 +38,6 @@ exports.userById = async (req, res) => {
         const { userId, showme } = req.params;
         const users = await User.find({ _id: { $ne: userId } });
         const usersByShowme = users.filter((item) => item.gender === showme)
-        const conversations = await Conversation.find({ members: { $in: [userId] } });
-        let  conuser = usersByShowme.filter((item)=>console.log(item._id === conversations.members.map((mem)=>mem)))
-        console.log(conversations);
         const usersData = Promise.all(usersByShowme.map(async (user) => {
             return {
                 _id: user._id,
@@ -113,43 +139,12 @@ exports.signout = async (req, res) => {
         res.status(400).json(error.message);
     }
 }
-// ------------------ Edit Personal Details Apis------
-// exports.editProfile = (req, res) => {
-//     const { fullName, email, gender, showMe, addReleationshipIntent, dob, number } = req.body;
-//     let profilePic = [];
-//     if (req.files) {
-//         profilePic = req.files.map(file => {
-//             return { img: file.filename }
-//         });
-//     }
-//     const update = {
-//         $set: {
-//             fullName, number, email, gender, showMe, addReleationshipIntent, dob, profilePic
-//         }
-//     }
-//     User.findOneAndUpdate({ number: number }, update, {
-//         new: true,
-//         useFindAndModify: false
-//     }).then((data) => {
-//         res.status(200).json({ data });
-//     }).catch((error) =>
-//         res.status(400).send({ errors: error.message })
-//     );
-// }
+
 
 // ------------------ Edit Personal Details Apis------
 // exports.getProfile = (req, res) => {
 //     User.findOne({ _id: req.user._id }).then((data) => {
 //         res.status(200).json({ data, message: "Get profile successfully." });
-//     }).catch((error) =>
-//         res.status(400).send({ errors: error.message })
-//     );
-// }
-
-// ------------------ Get all users------
-// exports.getUsersData = (req, res) => {
-//     User.find({}).then((data) => {
-//         res.status(200).json({ users: data, message: "Get all users successfully." });
 //     }).catch((error) =>
 //         res.status(400).send({ errors: error.message })
 //     );

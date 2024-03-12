@@ -53,7 +53,13 @@ exports.message = async (req, res) => {
         const { conversationId, senderId, message, receiverId = '' } = req.body;
         if (!senderId || !message) return res.status(400).send({ errors: 'Please fill all required fields' })
         if (conversationId === 'new' && receiverId) {
-            const newCoversation = new Conversation({ members: [senderId, receiverId] });
+            const newCoversation = new Conversation(
+                {
+                    members: [senderId, receiverId],
+                    receiverId: receiverId,
+                    senderId: senderId
+                }
+            );
             await newCoversation.save();
             const newMessage = new Messages(
                 {

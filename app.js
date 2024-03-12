@@ -36,7 +36,6 @@ io.on('connection', socket => {
         const receiver = users.find(user => user.userId === receiverId);
         const sender = users.find(user => user.userId === senderId);
         const user = await User.findById(senderId);
-        console.log(sender, receiver);
         if (receiver) {
             io.to(receiver.socketId).to(sender.socketId).emit('getMessage', {
                 senderId,
