@@ -2,14 +2,12 @@ const User = require('../models/Users')
 const bcrypt = require('bcryptjs');
 
 // if (req.file) {
-    //     profile = req.file.filename;
-    // }
+//     profile = req.file.filename;
+// }
 // ------------------ Edit Personal Details Apis------
 exports.updateInfo = (req, res) => {
     const { fullname, dob, number, gender, showme, intent } = req.body;
-    if (req.file) {
-        profile = req.file.filename;
-    }
+
     const update = {
         $set: {
             fullname,
@@ -18,14 +16,33 @@ exports.updateInfo = (req, res) => {
             gender,
             showme,
             intent,
-            profile
         }
     }
-    User.findOneAndUpdate({ _id: req.params.userId}, update, {
+    User.findOneAndUpdate({ _id: req.params.userId }, update, {
         new: true,
         useFindAndModify: false
     }).then((data) => {
-        res.status(200).json({updateData:data, message: "Update successfully." });
+        res.status(200).json({ updateData: data, message: "Update successfully." });
+    }).catch((error) =>
+        res.status(400).send({ errors: error.message })
+    );
+
+}
+
+exports.updateprofilepic = (req, res) => {
+    if (req.file) {
+        profile = req.file.filename;
+    }
+    const update = {
+        $set: {
+            profile
+        }
+    }
+    User.findOneAndUpdate({ _id: req.body._id }, update, {
+        new: true,
+        useFindAndModify: false
+    }).then((data) => {
+        res.status(200).json({ updateData: data, message: "Pic successfully updated..." });
     }).catch((error) =>
         res.status(400).send({ errors: error.message })
     );

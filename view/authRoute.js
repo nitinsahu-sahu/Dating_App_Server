@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, signin, userById, signout, updateInfo } = require('../controllers/authController');
+const { register, signin, userById, signout, updateInfo, updateprofilepic } = require('../controllers/authController');
 const router = express.Router();
 const path = require('path')
 const multer = require('multer')
@@ -20,7 +20,8 @@ router.get('/users/:userId/:showme', userById)
 router.post('/signin', signin)
 router.post('/register', register)
 router.post('/signout', signout)
-router.patch('/update-info/:userId', uploads.single('profile'), updateInfo)
+router.patch('/update-info/:userId', updateInfo)
+router.patch('/update-profilepic',uploads.single('profile'), updateprofilepic)
 // router.get('/getProfile', requireSignin, userMiddleware, getProfile)
 // router.get('/get-users',  getUsersData)
 
