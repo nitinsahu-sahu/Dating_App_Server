@@ -2,8 +2,9 @@ const express = require('express');
 const { register, signin, userById, signout, updateInfo, updateprofilepic } = require('../controllers/authController');
 const router = express.Router();
 const path = require('path')
-const multer = require('multer')
-
+const multer = require('multer');
+const { isRequestValidated, signinValidationReq } = require('../validator/allvalidation');
+isRequestValidated
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, path.join(path.dirname(__dirname), 'uploads'))
@@ -21,7 +22,7 @@ router.post('/signin', signin)
 router.post('/register', register)
 router.post('/signout', signout)
 router.patch('/update-info/:userId', updateInfo)
-router.patch('/update-profilepic',uploads.single('profile'), updateprofilepic)
+router.patch('/update-profilepic', uploads.single('profile'), updateprofilepic)
 // router.get('/getProfile', requireSignin, userMiddleware, getProfile)
 // router.get('/get-users',  getUsersData)
 

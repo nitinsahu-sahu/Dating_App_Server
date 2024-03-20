@@ -13,16 +13,10 @@ exports.registerValidationReq = [
 
 ]
 
-exports.validaterCreateGuestUserReq = [
-    check('first_name').notEmpty().withMessage('First name is required.'),
-    check('last_name').notEmpty().withMessage('Last name is required.'),
-    check('email').isEmail().withMessage('Email is required.'),
-    check('contact_number').notEmpty().withMessage('Mobile number is required.'),
-    check('contact_number').isLength({min:10}).withMessage('Mobile number must be atleat 10 character long.'),
-    check('contact_number').isLength({max:10}).withMessage('Invalid number.'),
+exports.signinValidationReq = [
+    check('loginId').isEmail().withMessage('Email is required.'),
     check('password').notEmpty().withMessage('Password is required.'),
     check('password').isLength({min:6}).withMessage('Password must be atleat 6 character long.'),
-    check('confirm_pwd').notEmpty().withMessage('Confirm password is required.'),
 ]
 
 // exports.validaterLoginGuestUserReq = [
