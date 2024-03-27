@@ -42,7 +42,7 @@ io.on('connection', socket => {
                 message,
                 conversationId,
                 receiverId,
-                user: { id: user._id, fullname: user.fullname, email: user.email }
+                user: { _id: user._id, fullname: user.fullname, email: user.email, profile: user.profile}
             });
             }else {
                 io.to(sender.socketId).emit('getMessage', {
@@ -50,7 +50,7 @@ io.on('connection', socket => {
                     message,
                     conversationId,
                     receiverId,
-                    user: { id: user._id, fullname: user.fullname, email: user.email }
+                    user: { _id: user._id, fullname: user.fullname, email: user.email,profile: user.profile}
                 });
             }
         });

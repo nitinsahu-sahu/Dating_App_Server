@@ -9,8 +9,14 @@ const messageSchema = mongoose.Schema({
     },
     message: {
         type: String
-    }
-});
+    },
+    type: {
+        type: String
+    },
+    receiverId: {
+        type: String,
+    },
+}, { timestamps: true });
 
 const Messages = mongoose.model('Message', messageSchema);
 

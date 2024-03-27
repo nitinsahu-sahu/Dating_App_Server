@@ -1,6 +1,8 @@
 const User = require('../models/Users')
 const Conversation = require('../models/Conversation')
 const Messages = require('../models/Messages')
+const mongoose = require('mongoose')
+const grid = require('gridfs-stream')
 
 
 // ------------------Personal Details Apis------
@@ -16,6 +18,11 @@ exports.msgByConversationId = async (req, res) => {
                         email: user.email,
                         fullname: user.fullname,
                         profile: user.profile
+                    },
+                    msgObj:{
+                        _id: message._id,
+                        message: message.message,
+                        type: message.type,
                     },
                     message: message.message
                 }
@@ -44,27 +51,28 @@ exports.msgByConversationId = async (req, res) => {
         }
     } catch (error) {
         res.status(400).send({ errors: error.message });
-
     }
 }
 
 exports.message = async (req, res) => {
     try {
-        const { conversationId, senderId, message, receiverId = '' } = req.body;
-        if (!senderId || !message) return res.status(400).send({ errors: 'Please fill all required fields' })
+        const { conversationId, senderId, message, receiverId = '', type } = req.body;
         if (conversationId === 'new' && receiverId) {
             const newCoversation = new Conversation(
                 {
                     members: [senderId, receiverId],
-                    receiverId: receiverId,
-                    senderId: senderId
+                    receiverId,
+                    senderId
                 }
             );
             await newCoversation.save();
             const newMessage = new Messages(
                 {
                     conversationId: newCoversation._id,
-                    senderId, message
+                    receiverId,
+                    senderId,
+                    message,
+                    type
                 }
             );
             await newMessage.save();
@@ -72,7 +80,11 @@ exports.message = async (req, res) => {
         } else if (!conversationId && !receiverId) {
             return res.status(400).send({ errors: 'Please fill all required fields' })
         }
-        const newMessage = new Messages({ conversationId, senderId, message });
+        const newMessage = new Messages(
+            {
+                conversationId, senderId, message, type, receiverId
+            }
+        );
         await newMessage.save();
         res.status(200).send('Message sent successfully');
     } catch (error) {
@@ -81,3 +93,31 @@ exports.message = async (req, res) => {
     }
 }
 
+exports.uploadFile = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json('File not found')
+    }
+    const imgUrl = `${process.env.OWN_URL}/file/${req.file.filename}`
+    return res.status(200).json(imgUrl)
+}
+
+let gfs,gridFsBucket;
+const conn = mongoose.connection;
+conn.once('open',()=>{
+    gridFsBucket = new mongoose.mongo.GridFSBucket(conn.db,{
+        bucketName:'fs'
+    })
+    gfs = grid(conn.db, mongoose.mongo)
+    gfs.collection('fs')
+})
+
+exports.getFile = async (req, res) => {
+    try {
+        let file = await gfs.files.findOne({filename: req.params.filename})
+        let readStream= gridFsBucket.openDownloadStream(file._id)
+        readStream.pipe(res)
+    }
+    catch (error) {
+        return res.status(400).json(error.message)
+    }
+}

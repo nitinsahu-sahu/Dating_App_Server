@@ -26,19 +26,22 @@ exports.conversationByuserId = async (req, res) => {
 }
 
 exports.conversation = async (req, res) => {
-    console.log('conve');
     try {
-        const { senderId, receiverId } = req.body;
-        const newCoversation = new Conversation(
-            {
-                members: [senderId, receiverId], 
-                receiverId: receiverId, 
-                senderId: senderId
-            }
-        );
-        
-        await newCoversation.save()
-        res.status(200).send('Conversation created successfully');
+        const {conversationId, senderId, receiverId } = req.body;
+        if (conversationId === 'new' && receiverId) {
+            const newCoversation = new Conversation(
+                {
+                    members: [senderId, receiverId],
+                    receiverId,
+                    senderId
+                }
+            );
+            await newCoversation.save().then(() => {
+                res.status(200).send('Conversation created successfully');
+            }).catch(() => {
+                res.status(400).send('Server error');
+            })
+        }
     } catch (error) {
         res.status(400).send({ errors: error.message });
     }
