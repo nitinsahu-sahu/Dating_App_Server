@@ -19,11 +19,8 @@ exports.msgByConversationId = async (req, res) => {
                         fullname: user.fullname,
                         profile: user.profile
                     },
-                    msgObj:{
-                        _id: message._id,
-                        message: message.message,
-                        type: message.type,
-                    },
+                    type: message.type,
+                    updatedAt: message.updatedAt,
                     message: message.message
                 }
             }));
@@ -97,15 +94,45 @@ exports.uploadFile = async (req, res) => {
     if (!req.file) {
         return res.status(400).json('File not found')
     }
-    const imgUrl = `${process.env.OWN_URL}/file/${req.file.filename}`
+    let { contentType } = req.body
+    if (contentType === 'image') {
+        let { filename } = req.file
+        let extention = filename.split('.').pop()
+        if (extention === 'pdf') {
+            return res.status(400).json({ message: "Valid pdf file" })
+        } else {
+            const imgUrl = `${process.env.OWN_URL}/file/${req.file.filename}`
+            return res.status(200).json(imgUrl)
+        };
+    } else if (contentType === 'pdf') {
+        let { filename } = req.file
+        let extention = filename.split('.').pop()
+        if (extention === 'gif' || extention === 'mp3' || extention === 'mp4' || extention === 'jpg' || extention === 'png' || extention === 'jpeg') {
+            return res.status(400).json({ message: "Valid pdf file" })
+        } else {
+            const imgUrl = `${process.env.OWN_URL}/file/${req.file.filename}`
+            return res.status(200).json(imgUrl)
+        };
+
+    } else {
+        console.log('capture');
+
+    }
+
+
+
+}
+
+exports.uploadImageFile = async (req, res) => {
+    const imgUrl = `${process.env.OWN_URL}/file/${JSON.stringify(req.body)}`
     return res.status(200).json(imgUrl)
 }
 
-let gfs,gridFsBucket;
+let gfs, gridFsBucket;
 const conn = mongoose.connection;
-conn.once('open',()=>{
-    gridFsBucket = new mongoose.mongo.GridFSBucket(conn.db,{
-        bucketName:'fs'
+conn.once('open', () => {
+    gridFsBucket = new mongoose.mongo.GridFSBucket(conn.db, {
+        bucketName: 'fs'
     })
     gfs = grid(conn.db, mongoose.mongo)
     gfs.collection('fs')
@@ -113,8 +140,8 @@ conn.once('open',()=>{
 
 exports.getFile = async (req, res) => {
     try {
-        let file = await gfs.files.findOne({filename: req.params.filename})
-        let readStream= gridFsBucket.openDownloadStream(file._id)
+        let file = await gfs.files.findOne({ filename: req.params.filename })
+        let readStream = gridFsBucket.openDownloadStream(file._id)
         readStream.pipe(res)
     }
     catch (error) {
