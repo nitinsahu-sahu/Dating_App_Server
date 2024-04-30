@@ -5,7 +5,38 @@ const mongoose = require('mongoose')
 const grid = require('gridfs-stream')
 
 
-// ------------------Personal Details Apis------
+// ------------------Delete message bothend------
+exports.deleteForEveryone = async (req, res) => {
+    try {
+        Messages.findOneAndDelete(
+            { _id: req.params.id }
+        ).then(() => {
+
+            res.status(200).json({ message: "Message delete successfully"});
+        }).catch((error) => {
+            res.status(400).json(error.message);
+        })
+    } catch (error) {
+        return res.status(400).json({ errors: error.message })
+    }
+}
+// -----------------------Delete message senderend-----------------
+exports.deleteMsgForMe = (req, res) => {
+    const { _id, c_status } = req.body;
+    Messages.findOneAndUpdate(
+        { _id: _id },
+        { senderDeleteStatus: c_status },
+        { new: true }
+    ).then(() => {
+        res.status(200).json({ message:"Successfully delete" });
+    }).catch((error) => {
+        res.status(400).json(error.message);
+    })
+};
+
+
+
+
 exports.msgByConversationId = async (req, res) => {
     try {
         const checkMessages = async (conversationId) => {
@@ -19,9 +50,12 @@ exports.msgByConversationId = async (req, res) => {
                         fullname: user.fullname,
                         profile: user.profile
                     },
+                    msgId:message._id,
                     type: message.type,
                     updatedAt: message.updatedAt,
-                    message: message.message
+                    message: message.message,
+                    senderDeleteStatus:message.senderDeleteStatus,
+                    receiverDeleteStatus:message.receiverDeleteStatus
                 }
             }));
             res.status(200).json(await messageUserData);

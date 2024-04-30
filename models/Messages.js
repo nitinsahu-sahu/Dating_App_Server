@@ -16,6 +16,16 @@ const messageSchema = mongoose.Schema({
     receiverId: {
         type: String,
     },
+    senderDeleteStatus: {
+        type: String,
+        enum: ['0', '1'],
+        default: '0'
+    },
+    receiverDeleteStatus: {
+        type: String,
+        enum: ['0', '1'],
+        default: '0'
+    }
 }, { timestamps: true });
 
 const Messages = mongoose.model('Message', messageSchema);
