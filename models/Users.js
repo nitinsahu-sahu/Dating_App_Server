@@ -64,8 +64,22 @@ const userSchema = new mongoose.Schema({
     },
     pass_word: {
         type: String,
-        required: true
     },
+    googleToken: {
+        type: String,
+    },
+    followers: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'USER',
+        }
+    ],
+    following: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'USER',
+        }
+    ],
     // pics: [
     //     {
     //         img: {

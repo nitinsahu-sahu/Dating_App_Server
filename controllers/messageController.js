@@ -12,7 +12,7 @@ exports.deleteForEveryone = async (req, res) => {
             { _id: req.params.id }
         ).then(() => {
 
-            res.status(200).json({ message: "Message delete successfully"});
+            res.status(200).json({ message: "Message delete successfully" });
         }).catch((error) => {
             res.status(400).json(error.message);
         })
@@ -28,14 +28,11 @@ exports.deleteMsgForMe = (req, res) => {
         { senderDeleteStatus: c_status },
         { new: true }
     ).then(() => {
-        res.status(200).json({ message:"Successfully delete" });
+        res.status(200).json({ message: "Successfully delete" });
     }).catch((error) => {
         res.status(400).json(error.message);
     })
 };
-
-
-
 
 exports.msgByConversationId = async (req, res) => {
     try {
@@ -50,12 +47,12 @@ exports.msgByConversationId = async (req, res) => {
                         fullname: user.fullname,
                         profile: user.profile
                     },
-                    msgId:message._id,
+                    msgId: message._id,
                     type: message.type,
                     updatedAt: message.updatedAt,
                     message: message.message,
-                    senderDeleteStatus:message.senderDeleteStatus,
-                    receiverDeleteStatus:message.receiverDeleteStatus
+                    senderDeleteStatus: message.senderDeleteStatus,
+                    receiverDeleteStatus: message.receiverDeleteStatus
                 }
             }));
             res.status(200).json(await messageUserData);
@@ -152,7 +149,28 @@ exports.uploadFile = async (req, res) => {
         console.log('capture');
 
     }
+    // if (!req.file) {
+    //     return res.status(400).json('File not found')
+    // }
+    // let { contentType } = req.body
+    // if (contentType === 'image') {
+    //     let { filename } = req.file
+    //     // let extention = filename.split('.').pop()
+        
+    // } else if (contentType === 'pdf') {
+    //     let { filename } = req.file
+    //     let extention = filename.split('.').pop()
+    //     if (extention === 'gif' || extention === 'mp3' || extention === 'mp4' || extention === 'jpg' || extention === 'png' || extention === 'jpeg') {
+    //         return res.status(400).json({ message: "Valid pdf file" })
+    //     } else {
+    //         const imgUrl = `${process.env.OWN_URL}/file/${req.file.filename}`
+    //         return res.status(200).json(imgUrl)
+    //     };
 
+    // } else {
+    //     console.log('capture');
+
+    // }
 
 
 }

@@ -50,7 +50,6 @@ io.on('connection', socket => {
                     message,
                     conversationId,
                     receiverId,
-
                     user: { _id: user._id, fullname: user.fullname, email: user.email,profile: user.profile}
                 });
             }

@@ -1,9 +1,132 @@
+const { Result } = require('express-validator');
 const User = require('../models/Users')
 const bcrypt = require('bcryptjs');
 
-// if (req.file) {
-//     profile = req.file.filename;
-// }
+//--------------------Foollow/unfollow API----------------------//
+exports.follow = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const currentUser = await User.findById(req.user._id);
+        if (currentUser.following.includes(user._id)) {
+            return res.status(400).json({ message: 'You are already following this user' });
+        }
+
+        currentUser.following.push(user._id);
+        user.followers.push(currentUser._id);
+        user.save()
+
+        currentUser.save().then((result) => {
+            const {
+                _id,
+                fullname,
+                email,
+                gender,
+                showme,
+                intent,
+                dob,
+                number,
+                profile,
+                followers,
+                following
+            } = result;
+            res.status(200).json({
+                data: {
+                    _id,
+                    fullname,
+                    email,
+                    gender,
+                    showme,
+                    intent,
+                    followers,
+                    following,
+                    dob, number, profile
+                }, message: "user following successfully"
+            })
+        }).catch((error) => {
+            res.status(500).json({ message: 'Internal server error' });
+        })
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};                                                         //                
+// -------------------------**********--------------------------//
+exports.unFollow = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const currentUser = await User.findById(req.user._id);
+        if (!currentUser.following.includes(user._id)) {
+            return res.status(400).json({ message: 'You are not following this user' });
+        }
+
+        currentUser.following.pull(user._id);
+        user.followers.pull(currentUser._id);
+
+        await Promise.all([currentUser.save(), user.save()]);
+
+        res.json({ message: 'You have unfollowed this user' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};                                                            //
+// --------------***********------------------------------------//
+exports.receiverInfo = async (req, res) => {
+    try {
+        const data = await User.findById(req.params.id);
+        if (!data) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        let details = {
+            "_id": data._id,
+            "fullname": data.fullname,
+            "email": data.email,
+            "number": data.number,
+            "gender": data.gender,
+            "showme": data.showme,
+            "dob": data.dob,
+            "intent": data.intent,
+            "profile": data.profile,
+            "followers": data.followers,
+            "following": data.following,
+        }
+        res.status(200).json({
+            details,
+            message: "Get data successfully."
+        });
+    } catch (error) {
+        res.status(400).send({ errors: error.message });
+    }
+};
+// ---------------------------------------------------
+exports.updateInfo = (req, res) => {
+    const { fullname, dob, number, gender, showme, intent } = req.body;
+
+    const update = {
+        $set: {
+            fullname,
+            dob,
+            number,
+            gender,
+            showme,
+            intent,
+        }
+    }
+    User.findOneAndUpdate({ _id: req.params.userId }, update, {
+        new: true,
+        useFindAndModify: false
+    }).then((data) => {
+        res.status(200).json({ updateData: data, message: "Update successfully." });
+    }).catch((error) =>
+        res.status(400).send({ errors: error.message })
+    );
+}
 // ------------------ Edit Personal Details Apis------
 exports.updateInfo = (req, res) => {
     const { fullname, dob, number, gender, showme, intent } = req.body;
@@ -26,7 +149,6 @@ exports.updateInfo = (req, res) => {
     }).catch((error) =>
         res.status(400).send({ errors: error.message })
     );
-
 }
 
 exports.updateprofilepic = (req, res) => {
@@ -62,6 +184,8 @@ exports.userById = async (req, res) => {
                 fullname: user.fullname,
                 receiverId: user._id,
                 profile: user.profile,
+                followers: user.followers,
+                following: user.following,
             }
         }))
         res.status(200).json(await usersData);
@@ -71,24 +195,44 @@ exports.userById = async (req, res) => {
 }
 
 // ------------------Register Apis------
-exports.register = (req, res) => {
-    const { fullname, email, gender, showme, intent, dob, number, password, confirm_pwd } = req.body;
-    if (!fullname || !gender || !showme || !intent || !dob || !email || !number || !password || !confirm_pwd) {
-        return res.status(400).send({ errors: "plz filled the field properly" });
-    }
-    User.findOne({ email: email }).then((userExist) => {
-        if (userExist) {
-            return res.status(400).send({ errors: "Email Already registerd." });
-        } else if (password !== confirm_pwd) {
-            return res.status(400).send({ errors: "Your password and confirmation password do not match." });
-        } else {
-            const user = new User({ fullname, email, gender, showme, intent, dob, number, password });
-            user.save().then(() => {
-                res.status(200).send({ message: "User registerd successfully." });
-            }).catch((errors) => res.status(400).send({ errors: errors.message }));
+exports.register = async (req, res) => {
+    try {
+        const { fullname, email, gender, showme, intent, dob, number, password, confirm_pwd } = req.body;
+
+        // Check if all required fields are filled properly
+        const requiredFields = [fullname, email, gender, showme, intent, dob, number, password, confirm_pwd];
+        if (requiredFields.some(field => !field)) {
+            return res.status(400).send({ errors: "Please fill in all fields properly" });
         }
-    }).catch((error) => { res.status(400).send({ errors: error.message }) });
-}
+
+        // Check if email is already registered
+        const emailExist = await User.findOne({ email: email });
+        if (emailExist) {
+            return res.status(400).send({ errors: "Email already registered." });
+        }
+
+        // Check if mobile number is already registered
+        const numberExist = await User.findOne({ number: number });
+        if (numberExist) {
+            return res.status(400).send({ errors: "Mobile number already registered." });
+        }
+
+        // Check if password and confirmation password match
+        if (password !== confirm_pwd) {
+            return res.status(400).send({ errors: "Your password and confirmation password do not match." });
+        }
+
+        // Create new user
+        const newUser = new User({ fullname, email, gender, showme, intent, dob, number, password });
+        await newUser.save();
+
+        res.status(200).send({ message: "User registered successfully." });
+    } catch (error) {
+        console.error(error);
+        res.status(400).send({ errors: error.message });
+    }
+};
+
 
 //Signin controller
 exports.signin = async (req, res) => {
@@ -118,7 +262,9 @@ exports.signin = async (req, res) => {
                 intent,
                 dob,
                 number,
-                profile
+                profile,
+                followers,
+                following
             } = user_info;
             if (!isMatch) {
                 res.status(400).json({ errors: "Invalid email and password." });
@@ -134,6 +280,8 @@ exports.signin = async (req, res) => {
                             gender,
                             showme,
                             intent,
+                            followers,
+                            following,
                             dob, number, profile
                         }, message: "Signin successfully"
                     });
@@ -142,7 +290,68 @@ exports.signin = async (req, res) => {
             res.status(400).json({ errors: "User not found." });
         }
     } catch (error) {
-        res.status(400).json({ errors: error.message });
+        res.status(400).json({ errors: "Server mentinance" });
+    }
+}
+
+//Signin controller
+exports.signinFB = async (req, res) => {
+    let { credential, email, name, picture, clientId } = req.body
+
+    try {
+        const user_info = await User.findOne({ email })
+        if (user_info && user_info.role === 'guest') {
+            const token = credential;
+            const user_id = user_info._id;
+            res.cookie('user_token', token, { expiresIn: '5h' })
+            res.cookie('user_id', user_id, { expiresIn: '5h' })
+            const {
+                _id,
+                fullname,
+                email,
+                gender,
+                showme,
+                intent,
+                dob,
+                number,
+                profile,
+                followers,
+                following
+            } = user_info;
+            res.status(200).json(
+                {
+                    _id,
+                    token,
+                    data: {
+                        _id,
+                        fullname,
+                        email,
+                        gender,
+                        showme,
+                        intent,
+                        followers,
+                        following,
+                        dob, number, profile
+                    }, message: "Signin successfully"
+                });
+        } else {
+            let newUser = new User({ googleToken: credential, fullname: name, email, profile: picture, number: "xxxxx-xxxxx" });
+            await newUser.save()
+            res.status(200).send({
+                _id: clientId,
+                token: credential,
+                data: {
+                    _id: clientId,
+                    fullname: name,
+                    email,
+                    profile: picture,
+                    number: "xxxxx-xxxxx"
+                },
+                message: "User registered successfully."
+            });
+        }
+    } catch (error) {
+        res.status(400).json({ errors: "Server mentinance" });
     }
 }
 
@@ -157,36 +366,6 @@ exports.signout = async (req, res) => {
     }
 }
 
-
-// ------------------ Edit Personal Details Apis------
-// exports.getProfile = (req, res) => {
-//     User.findOne({ _id: req.user._id }).then((data) => {
-//         res.status(200).json({ data, message: "Get profile successfully." });
-//     }).catch((error) =>
-//         res.status(400).send({ errors: error.message })
-//     );
-// }
-
-
-// ----------------Login-------------------
-// exports.signin = async (req, res) => {
-//     try {
-//         const { number } = req.body;
-//         const user_info = await User.findOne({ number: number });
-//         if (user_info && user_info.role === 'guest') {
-//             const token = await user_info.generateAuthToken();
-//             const user_id = user_info._id;
-//             res.cookie('user_token', token, { expiresIn: '5h' })
-//             res.cookie('user_id', user_id, { expiresIn: '5h' })
-//             const { _id, number, fullName, email, gender, showMe, addReleationshipIntent, dob } = user_info;
-//             res.status(200).json({ _id, token, data: { _id, number, fullName, email, gender, showMe, addReleationshipIntent, dob }, message: "Signin successfully" });
-//         } else {
-//             res.status(400).json({ errors: "User not found." });
-//         }
-//     } catch (errors) {
-//         res.status(400).json(errors.message);
-//     }
-// }
 
 // ----------------Login-------------------
 // exports.Googlesignin = async (req, res) => {
